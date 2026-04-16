@@ -3,11 +3,12 @@ import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Notification from "@/models/Notification";
 import { getToken } from "next-auth/jwt";
+import { getAuthSecret } from "@/lib/authSecret";
 
 export async function PATCH(req: NextRequest): Promise<NextResponse> {
   try {
     // 1. Authentication Check
-    const token = await getToken({ req, secret: process.env.SESSION_SECRET });
+    const token = await getToken({ req, secret: getAuthSecret() });
     if (!token) {
       return NextResponse.json({ message: "Authentication required." }, { status: 401 });
     }

@@ -11,6 +11,7 @@ import User, { IUser, UserStatus } from "@/models/User"; // Import IUser interfa
 import UserProfile from "@/models/UserProfile"; // Ensure UserProfile model is imported
 import mongoose from "mongoose"; // Import mongoose itself
 import { MongoClient } from "mongodb"; // Import MongoClient
+import { getAuthSecret } from "@/lib/authSecret";
 
 // --- Type Extensions ---
 // Add profileComplete and make profile/name optional
@@ -396,7 +397,7 @@ export const authOptions: AuthOptions = {
       return session; // Return the session object for the client
     },
   },
-  secret: process.env.SESSION_SECRET, // Ensure this is set in your .env file
+  secret: getAuthSecret(), // Supports AUTH_SECRET, NEXTAUTH_SECRET, or SESSION_SECRET
   // debug: process.env.NODE_ENV === 'development', // Optional: Enable for more logs
 };
 

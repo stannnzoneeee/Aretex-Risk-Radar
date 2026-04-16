@@ -4,12 +4,13 @@ import User from "@/models/User";
 
 
 import { getToken } from "next-auth/jwt";
+import { getAuthSecret } from "@/lib/authSecret";
 
 export async function GET(req: NextRequest) {
   await connectDB();
 
   // Get the logged-in user's token from the request
-  const token = await getToken({ req, secret: process.env.SESSION_SECRET });
+  const token = await getToken({ req, secret: getAuthSecret() });
 
   if (!token) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

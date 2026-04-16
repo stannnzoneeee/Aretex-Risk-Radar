@@ -11,6 +11,7 @@ import PDFDocument from 'pdfkit';
 import { PassThrough } from 'stream';
 import path from 'path';
 import fs from 'fs';
+import { getAuthSecret } from '@/lib/authSecret';
 
 // Helper function to stream PDF to buffer (keep as is)
 async function streamToBuffer(stream: NodeJS.ReadableStream): Promise<Buffer> {
@@ -57,7 +58,7 @@ const formatLocationString = (location: any): string => {
 
 export async function GET(req: NextRequest) {
     // --- Authentication ---
-    const secret = process.env.SESSION_SECRET || process.env.NEXTAUTH_SECRET;
+    const secret = getAuthSecret();
     if (!secret) {
         console.error("Crime Export Error: Auth secret not set.");
         return NextResponse.json({ message: 'Authentication configuration error.' }, { status: 500 });

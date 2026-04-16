@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { UserStatus } from "@/models/User"; // Import UserStatus type
+import { getAuthSecret } from "@/lib/authSecret";
 
 // Define root paths based on role
 const USER_AUTHENTICATED_ROOT = "/ui/dashboard";
@@ -13,7 +14,7 @@ const AUTH_PAGES = ["/", "/registration"]; // Pages to redirect away from if log
 
 export async function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
-  const secret = process.env.SESSION_SECRET;
+  const secret = getAuthSecret();
 
   // --- Get Token ---
   let token = null;

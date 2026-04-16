@@ -7,6 +7,7 @@ import UserProfile, { IUserProfile, UserSex } from "@/models/UserProfile";
 // import { requireRole } from "@/middleware/authMiddleware";
 import { getToken } from "next-auth/jwt";
 import mongoose from "mongoose"; // Import mongoose
+import { getAuthSecret } from "@/lib/authSecret";
 
 // Define allowed roles and statuses for validation
 const ALLOWED_ROLES: IUser['role'][] = ['user', 'admin']; // Adjust as needed
@@ -23,7 +24,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     await connectDB();
 
     // Use getToken for consistency
-    const token = await getToken({ req, secret: process.env.SESSION_SECRET });
+    const token = await getToken({ req, secret: getAuthSecret() });
 
     // Decide who can GET: Admin only? Or user for their own ID?
     // Option 1: Admin only
@@ -69,7 +70,7 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
   try {
     await connectDB();
 
-    const token = await getToken({ req, secret: process.env.SESSION_SECRET });
+    const token = await getToken({ req, secret: getAuthSecret() });
     if (!token) {
       return NextResponse.json({ error: "Unauthorized: Authentication required" }, { status: 401 });
     }
@@ -167,7 +168,7 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
     await connectDB();
 
     // 1. Authorization Check (Admin Only)
-    const token = await getToken({ req, secret: process.env.SESSION_SECRET });
+    const token = await getToken({ req, secret: getAuthSecret() });
     if (!token || token.role !== 'admin') {
         return NextResponse.json({ message: 'Unauthorized: Admin role required' }, { status: 403 });
     }
@@ -289,7 +290,7 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
 export async function DELETE(req: NextRequest, { params }: RouteContext) {
   await connectDB();
 
-  const token = await getToken({ req, secret: process.env.SESSION_SECRET });
+  const token = await getToken({ req, secret: getAuthSecret() });
   if (!token || token.role !== 'admin') {
     return NextResponse.json({ message: 'Unauthorized: Admin role required' }, { status: 403 });
   }

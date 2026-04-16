@@ -10,6 +10,7 @@ import PDFDocument from 'pdfkit';
 import { PassThrough } from 'stream'; // Use standard import for stream
 import path from 'path'; // Import path module for joining paths
 import fs from 'fs'; // Import fs to check if font files exist
+import { getAuthSecret } from '@/lib/authSecret';
 
 // Helper function to stream PDF to buffer
 async function streamToBuffer(stream: NodeJS.ReadableStream): Promise<Buffer> {
@@ -36,7 +37,7 @@ interface ExportUserData {
 
 export async function GET(req: NextRequest) {
     // --- Authentication and Parameter Parsing ---
-    const secret = process.env.SESSION_SECRET || process.env.NEXTAUTH_SECRET;
+    const secret = getAuthSecret();
     if (!secret) {
         console.error("Authentication secret (SESSION_SECRET or NEXTAUTH_SECRET) is not set in environment variables.");
         return NextResponse.json({ message: 'Authentication configuration error.' }, { status: 500 });

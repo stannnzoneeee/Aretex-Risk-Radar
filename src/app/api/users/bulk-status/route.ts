@@ -4,6 +4,7 @@ import connectDB from '@/lib/mongodb';
 import User, { UserStatus } from '@/models/User'; // Adjust path if needed
 import mongoose from 'mongoose';
 import { getToken } from 'next-auth/jwt'; // To check admin role
+import { getAuthSecret } from '@/lib/authSecret';
 
 const VALID_STATUSES: UserStatus[] = ['approved', 'rejected', 'pending']; // Define valid statuses
 
@@ -11,7 +12,7 @@ export async function PATCH(request: NextRequest) {
     await connectDB();
 
     // 1. Authorization Check
-    const token = await getToken({ req: request, secret: process.env.SESSION_SECRET });
+    const token = await getToken({ req: request, secret: getAuthSecret() });
     if (!token || token.role !== 'admin') {
         console.warn('[API /users/bulk-status] Unauthorized attempt.');
         return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });

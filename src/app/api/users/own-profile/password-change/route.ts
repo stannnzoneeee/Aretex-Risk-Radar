@@ -4,6 +4,7 @@ import User from '@/models/User';
 import { getToken } from 'next-auth/jwt';
 import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
+import { getAuthSecret } from '@/lib/authSecret';
 
 const SALT_ROUNDS = 10; // Use the same salt rounds as in registration/seeding
 
@@ -11,7 +12,7 @@ export async function PATCH(req: NextRequest) {
     await connectDB();
 
     // 1. Authentication Check
-    const token = await getToken({ req, secret: process.env.SESSION_SECRET });
+    const token = await getToken({ req, secret: getAuthSecret() });
     if (!token || !token.sub) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

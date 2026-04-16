@@ -98,6 +98,7 @@ function SignInContent() {
       const response = await signIn("credentials", {
         email: email,
         password: password,
+        callbackUrl: finalCallbackUrl,
         redirect: false, // Handle response here instead of auto-redirect
       });
 

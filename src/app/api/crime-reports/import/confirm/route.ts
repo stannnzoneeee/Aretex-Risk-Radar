@@ -6,6 +6,7 @@ import CrimeReport from '@/models/CrimeReports';
 import Location from '@/models/location'; // Needed for type checking if we were re-fetching
 import CrimeType from '@/models/CrimeType'; // Needed for type checking if we were re-fetching
 import mongoose, { ClientSession } from 'mongoose';
+import { getAuthSecret } from '@/lib/authSecret';
 
 // --- Types (mirroring frontend payload) ---
 // These should match the structure sent from the frontend,
@@ -46,7 +47,7 @@ interface ConfirmationPayload {
 export async function POST(req: NextRequest) {
     console.log("Received request for crime report import confirmation.");
     // 1. Authentication
-    const secret = process.env.SESSION_SECRET || process.env.NEXTAUTH_SECRET;
+    const secret = getAuthSecret();
     if (!secret) { /* ... auth error ... */ return NextResponse.json({ message: 'Auth config error' }, { status: 500 }); }
     const token = await getToken({ req, secret });
     if (!token || token.role !== 'admin') { /* ... auth error ... */ return NextResponse.json({ message: 'Unauthorized' }, { status: 401 }); }

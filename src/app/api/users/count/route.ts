@@ -4,11 +4,12 @@ import connectDB from "@/lib/mongodb";
 import User, { UserStatus } from "@/models/User"; // Import UserStatus
 import { getToken } from "next-auth/jwt";
 import mongoose from "mongoose"; // Import mongoose
+import { getAuthSecret } from "@/lib/authSecret";
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
     // 1. Authentication and Authorization Check (Admin Only)
-    const token = await getToken({ req, secret: process.env.SESSION_SECRET });
+    const token = await getToken({ req, secret: getAuthSecret() });
 
     if (!token) {
       return NextResponse.json({ message: "Authentication required." }, { status: 401 });

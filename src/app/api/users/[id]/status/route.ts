@@ -7,6 +7,7 @@ import { getToken } from "next-auth/jwt";
 import { sendStatusUpdateEmail } from "@/lib/email"; // Import the email function
 import mongoose from "mongoose";
 import UserProfile from "@/models/UserProfile"; // Import UserProfile to potentially get name
+import { getAuthSecret } from "@/lib/authSecret";
 
 // Define the expected structure of the request body
 interface UpdateStatusRequestBody {
@@ -31,7 +32,7 @@ export async function PATCH(
     }
 
     // 2. Authentication and Authorization Check (Admin Only)
-    const token = await getToken({ req, secret: process.env.SESSION_SECRET });
+    const token = await getToken({ req, secret: getAuthSecret() });
     if (!token) {
       return NextResponse.json({ message: "Authentication required." }, { status: 401 });
     }

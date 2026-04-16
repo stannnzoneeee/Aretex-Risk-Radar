@@ -5,6 +5,7 @@ import User, { UserStatus } from "@/models/User"; // Import UserStatus
 import UserProfile from "@/models/UserProfile";
 import { getToken } from "next-auth/jwt";
 import mongoose from "mongoose";
+import { getAuthSecret } from "@/lib/authSecret";
 
 // Helper function to parse sort parameter
 const parseSortParam = (sortParam: string | null): { [key: string]: 1 | -1 } => {
@@ -21,7 +22,7 @@ const parseSortParam = (sortParam: string | null): { [key: string]: 1 | -1 } => 
 export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
     // 1. Authentication and Authorization Check
-    const token = await getToken({ req, secret: process.env.SESSION_SECRET });
+    const token = await getToken({ req, secret: getAuthSecret() });
     if (!token || token.role !== "admin") {
       return NextResponse.json(
         { message: token ? "Forbidden: Admin role required." : "Authentication required." },

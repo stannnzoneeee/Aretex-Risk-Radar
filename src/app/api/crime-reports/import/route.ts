@@ -7,6 +7,7 @@ import Location, { ILocation } from '@/models/location'; // Import Location mode
 import CrimeType from '@/models/CrimeType'; // Import CrimeType model
 import mongoose, { ClientSession } from 'mongoose';
 import * as ExcelJS from 'exceljs';
+import { getAuthSecret } from '@/lib/authSecret';
 
 // --- Configuration ---
 // Define expected Excel column headers (MUST match your template EXACTLY)
@@ -289,7 +290,7 @@ async function findOrCreateCrimeType(
 export async function POST(req: NextRequest) {
     console.log("Received request for crime report import analysis.");
     // 1. Authentication
-    const secret = process.env.SESSION_SECRET || process.env.NEXTAUTH_SECRET;
+    const secret = getAuthSecret();
     if (!secret) { return NextResponse.json({ message: 'Auth config error' }, { status: 500 }); }
     const token = await getToken({ req, secret });
     if (!token || token.role !== 'admin') { return NextResponse.json({ message: 'Unauthorized' }, { status: 401 }); }
