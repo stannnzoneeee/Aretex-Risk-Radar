@@ -350,16 +350,18 @@ export default function ProfilePage() {
     }
 
     // Prepare data, trimming string values
-    const updateData: Partial<EditableProfileFields> = {};
-    (Object.keys(formData) as Array<keyof EditableProfileFields>).forEach(key => {
-        const value = formData[key];
-        // Use capitalized value directly from state for names
-        updateData[key] = typeof value === 'string' ? value.trim() : value;
-    });
+    const updateData: Partial<EditableProfileFields> & { profilePictureUrl?: string } = {};
+    if (formData.firstName !== undefined) updateData.firstName = formData.firstName.trim();
+    if (formData.lastName !== undefined) updateData.lastName = formData.lastName.trim();
+    if (formData.employeeNumber !== undefined) updateData.employeeNumber = formData.employeeNumber.trim();
+    if (formData.workPosition !== undefined) updateData.workPosition = formData.workPosition.trim();
+    if (formData.team !== undefined) updateData.team = formData.team.trim();
+    if (formData.birthdate !== undefined) updateData.birthdate = formData.birthdate.trim();
+    if (formData.sex !== undefined) updateData.sex = formData.sex.trim() as UserSex;
 
     // --- Add uploaded image URL to the update data ---
     if (uploadedImageUrl) {
-        (updateData as any).profilePictureUrl = uploadedImageUrl; // Add the URL
+        updateData.profilePictureUrl = uploadedImageUrl; // Add the URL
     }
 
     try {

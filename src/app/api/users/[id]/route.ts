@@ -14,9 +14,12 @@ const ALLOWED_STATUSES: UserStatus[] = ['pending', 'approved', 'rejected'];
 // --- Define allowed sex values for validation ---
 const ALLOWED_SEX_VALUES: UserSex[] = ['Male', 'Female'];
 
+type RouteContext = {
+    params: Promise<{ id: string }>;
+};
 
 // --- GET user by ID ---
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: RouteContext) {
     await connectDB();
 
     // Use getToken for consistency
@@ -29,7 +32,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     }
 
     try {
-        const { id } = params;
+        const { id } = await params;
 
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return NextResponse.json({ message: "Invalid user ID format" }, { status: 400 });
@@ -62,7 +65,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
 // --- PUT User Profile by ID (User self-update OR Admin update) ---
 // This handler remains unchanged as it correctly handles profile fields including 'sex'
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: RouteContext) {
   try {
     await connectDB();
 
@@ -71,7 +74,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       return NextResponse.json({ error: "Unauthorized: Authentication required" }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
     const body = await req.json();
     console.log(`[API PUT /users/:id] Received body for user ${id}:`, JSON.stringify(body)); // Log received body
 
@@ -160,7 +163,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
 
 // --- PATCH User Details (Role, Status, Sex) by ID (Admin only) ---
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: RouteContext) {
     await connectDB();
 
     // 1. Authorization Check (Admin Only)
@@ -170,7 +173,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     }
 
     try {
-        const { id } = params;
+        const { id } = await params;
         const body = await req.json();
 
         // 2. Validate ID format
@@ -283,7 +286,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
 // --- DELETE user by ID (Admin only) ---
 // This handler remains unchanged
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: RouteContext) {
   await connectDB();
 
   const token = await getToken({ req, secret: process.env.SESSION_SECRET });
@@ -292,7 +295,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   }
 
   try {
-    const { id } = params;
+    const { id } = await params;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
         return NextResponse.json({ message: "Invalid user ID format" }, { status: 400 });

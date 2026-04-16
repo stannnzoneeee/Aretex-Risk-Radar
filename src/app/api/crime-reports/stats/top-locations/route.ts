@@ -90,7 +90,7 @@ export async function GET(req: NextRequest) {
             {
                 $match: {
                     // Ensure the specific grouping field exists and is not null/empty
-                    [`locationDetails.${groupByField}`]: { $exists: true, $ne: null, $ne: "" }
+                    [`locationDetails.${groupByField}`]: { $exists: true, $nin: [null, ""] }
                 }
             },
             // 5. Group by the specified location field

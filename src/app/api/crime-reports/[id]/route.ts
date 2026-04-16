@@ -8,16 +8,20 @@ import { isPSGCCode } from "@/app/utils/ispsgc";
 import { fetchCoordinates } from "@/app/utils/geocoder";
 import mongoose from "mongoose";
 
+type RouteContext = {
+  params: Promise<{ id: string }>;
+};
+
 // --- GET Handler ---
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: RouteContext) {
   await connectDB();
 
-  const roleCheck = await requireRole(new NextRequest(req), ["admin", "user"]);
+  const roleCheck = await requireRole(req, ["admin", "user"]);
   if (roleCheck) return roleCheck;
 
-  try {
-    const id = params.id;
+  const { id } = await params;
 
+  try {
     if (!id || !mongoose.Types.ObjectId.isValid(id)) {
         console.error(`Invalid Crime Report ID received: ${id}`);
         return NextResponse.json({ error: "Invalid Crime Report ID format" }, { status: 400 });
@@ -53,7 +57,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   } catch (error) {
     console.error("Error fetching Crime Report:", error);
      if (error instanceof mongoose.Error.CastError) {
-        return NextResponse.json({ error: `Invalid ID format: ${params.id}` }, { status: 400 });
+        return NextResponse.json({ error: `Invalid ID format: ${id}` }, { status: 400 });
      }
     return NextResponse.json({ error: "Database error" }, { status: 500 });
   }
@@ -61,22 +65,22 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 
 // --- PUT Handler --- 
 export async function PUT(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  { params }: RouteContext
 ) {
   await connectDB();
 
   // --- FIX: Clone the request before passing it to middleware ---
 
   const reqCloneForAuth = req.clone();
-  const roleCheck = await requireRole(new NextRequest(reqCloneForAuth), ["admin"]);
+  const roleCheck = await requireRole(reqCloneForAuth, ["admin"]);
 
 
   if (roleCheck) return roleCheck;
 
-  try {
-    const crimeReportId = params.id;
+  const { id: crimeReportId } = await params;
 
+  try {
     // Now, read the body from the *original* request object.
 
     const body = await req.json();
@@ -205,15 +209,15 @@ export async function PUT(
 
 
  // --- DELETE Handler --- 
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: RouteContext) {
     await connectDB(); // Connect DB for DELETE
 
-    const roleCheck = await requireRole(new NextRequest(req), ["admin"]);
+    const roleCheck = await requireRole(req, ["admin"]);
     if (roleCheck) return roleCheck;
 
-  try {
-    const crimeReportId = params.id;
+  const { id: crimeReportId } = await params;
 
+  try {
     // --- ID Validation --- (NEW)
     if (!crimeReportId || !mongoose.Types.ObjectId.isValid(crimeReportId)) {
         console.error(`Invalid Crime Report ID for delete: ${crimeReportId}`);

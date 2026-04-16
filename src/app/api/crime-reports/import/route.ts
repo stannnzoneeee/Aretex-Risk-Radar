@@ -6,7 +6,7 @@ import CrimeReport from '@/models/CrimeReports';
 import Location, { ILocation } from '@/models/location'; // Import Location model and interface
 import CrimeType from '@/models/CrimeType'; // Import CrimeType model
 import mongoose, { ClientSession } from 'mongoose';
-import * as XLSX from 'xlsx';
+import * as ExcelJS from 'exceljs';
 
 // --- Configuration ---
 // Define expected Excel column headers (MUST match your template EXACTLY)
@@ -41,6 +41,7 @@ const REQUIRED_FIELDS = [
 
 // --- Helper Types ---
 interface ExcelRowData {
+    [key: string]: string | number | Date | null | undefined;
     __rowNum__: number;
     CrimeID?: string;
     Date?: string | number | Date;
@@ -98,6 +99,100 @@ interface ImportAnalysisResult {
     potentialUpdates: ProcessedReportInfo[];
     validationErrors: ValidationError[];
     duplicateValidationErrors: ValidationError[];
+}
+
+type ExcelCellPrimitive = string | number | Date | null;
+
+function normalizeExcelCellValue(value: ExcelJS.CellValue, fallbackText = ''): ExcelCellPrimitive {
+    if (value == null) return null;
+    if (value instanceof Date) return value;
+    if (typeof value === 'string' || typeof value === 'number') return value;
+    if (typeof value === 'boolean') return String(value);
+
+    if ('result' in value && value.result !== undefined) {
+        return normalizeExcelCellValue(value.result, fallbackText);
+    }
+    if ('richText' in value) {
+        return value.richText.map(part => part.text).join('');
+    }
+    if ('text' in value) {
+        return value.text;
+    }
+    if ('error' in value) {
+        return value.error;
+    }
+
+    return fallbackText || null;
+}
+
+function normalizeHeader(value: ExcelCellPrimitive): string {
+    if (value == null) return '';
+    return String(value).trim();
+}
+
+function readWorksheetData(worksheet: ExcelJS.Worksheet): { headerRow: string[]; jsonData: ExcelRowData[] } {
+    const firstRow = worksheet.getRow(1);
+    const headerRow = Array.from({ length: worksheet.columnCount }, (_, index) => {
+        const cell = firstRow.getCell(index + 1);
+        return normalizeHeader(normalizeExcelCellValue(cell.value, cell.text));
+    });
+
+    const jsonData: ExcelRowData[] = [];
+    worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+        if (rowNumber === 1) return;
+
+        const rowData: ExcelRowData = { __rowNum__: rowNumber };
+        let hasValues = false;
+
+        headerRow.forEach((header, index) => {
+            if (!header) return;
+
+            const cell = row.getCell(index + 1);
+            const value = normalizeExcelCellValue(cell.value, cell.text);
+            if (value != null && String(value).trim() !== '') {
+                hasValues = true;
+            }
+            rowData[header] = value;
+        });
+
+        if (hasValues) {
+            jsonData.push(rowData);
+        }
+    });
+
+    return { headerRow, jsonData };
+}
+
+function parseExcelSerialDate(serial: number): Date | null {
+    if (!Number.isFinite(serial) || serial < 1 || serial > 60000) return null;
+
+    const excelEpoch = Date.UTC(1899, 11, 30);
+    const millisecondsPerDay = 24 * 60 * 60 * 1000;
+    return new Date(excelEpoch + serial * millisecondsPerDay);
+}
+
+function parseImportedDate(value: ExcelRowData['Date']): Date | null {
+    if (value instanceof Date && !isNaN(value.getTime())) {
+        return value;
+    }
+
+    if (typeof value === 'number') {
+        return parseExcelSerialDate(value);
+    }
+
+    if (value == null) {
+        return null;
+    }
+
+    const textValue = String(value).trim();
+    const numericValue = Number(textValue);
+    if (textValue !== '' && Number.isFinite(numericValue) && /^\d+(\.\d+)?$/.test(textValue)) {
+        const serialDate = parseExcelSerialDate(numericValue);
+        if (serialDate) return serialDate;
+    }
+
+    const parsedDate = new Date(textValue);
+    return isNaN(parsedDate.getTime()) ? null : parsedDate;
 }
 
 // --- Helper Functions ---
@@ -212,17 +307,16 @@ export async function POST(req: NextRequest) {
         const fileBuffer = await file.arrayBuffer();
 
         // 3. Excel Parsing
-        const workbook = XLSX.read(fileBuffer, { type: 'buffer', cellDates: true });
-        const sheetName = workbook.SheetNames[0];
-        if (!sheetName) { return NextResponse.json({ message: 'Excel file empty/invalid.' }, { status: 400 }); }
-        const worksheet = workbook.Sheets[sheetName];
-        const jsonData: ExcelRowData[] = XLSX.utils.sheet_to_json<ExcelRowData>(worksheet, { raw: false, defval: null });
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.load(fileBuffer);
+        const worksheet = workbook.worksheets[0];
+        if (!worksheet) { return NextResponse.json({ message: 'Excel file empty/invalid.' }, { status: 400 }); }
+        const { headerRow, jsonData } = readWorksheetData(worksheet);
 
         if (jsonData.length === 0) { return NextResponse.json({ fileName, totalRows: 0, validNewReports: [], potentialUpdates: [], validationErrors: [], duplicateValidationErrors: [] } as ImportAnalysisResult, { status: 200 }); }
         console.log(`Parsed ${jsonData.length} rows from ${fileName}.`);
 
         // --- Header Validation ---
-        const headerRow: string[] = XLSX.utils.sheet_to_json<string[]>(worksheet, { header: 1 })[0] || [];
         const actualHeaders = headerRow.map(h => h?.trim()).filter(Boolean);
         const missingHeaders = REQUIRED_FIELDS.filter(h => !actualHeaders.includes(h));
         if (missingHeaders.length > 0) {
@@ -278,16 +372,8 @@ export async function POST(req: NextRequest) {
                 let parsedEventProximity = row.EventProximity ? String(row.EventProximity).trim() : undefined;
 
                 // Date
-                try {
-                    if (row.Date instanceof Date && !isNaN(row.Date.getTime())) {
-                        parsedDate = row.Date;
-                    } else {
-                        const dateVal = new Date(String(row.Date));
-                        if (!isNaN(dateVal.getTime())) {
-                            parsedDate = dateVal;
-                        } else { throw new Error("Invalid date value"); }
-                    }
-                } catch (e) {
+                parsedDate = parseImportedDate(row.Date) || undefined;
+                if (!parsedDate) {
                     rowErrors.push({ row: rowNum, field: 'Date', message: 'Invalid date format.', value: row.Date });
                     isValid = false;
                 }

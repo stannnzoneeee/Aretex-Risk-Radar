@@ -6,7 +6,7 @@ import CrimeReport from '@/models/CrimeReports'; // Import CrimeReport model
 import Location from '@/models/location'; // Import Location model
 import CrimeType from '@/models/CrimeType'; // Import CrimeType model
 import mongoose, { PipelineStage, Types } from 'mongoose'; // Import Types for ObjectId check
-import * as XLSX from 'xlsx';
+import * as ExcelJS from 'exceljs';
 import PDFDocument from 'pdfkit';
 import { PassThrough } from 'stream';
 import path from 'path';
@@ -244,17 +244,17 @@ export async function GET(req: NextRequest) {
                 r.crime_type, r.crime_category, r.createdAt
             ]);
 
-            const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
-            // Adjust column widths as needed
-            ws['!cols'] = [
-                { wch: 15 }, { wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 15 }, { wch: 10 }, // Basic info
-                { wch: 60 }, { wch: 15 }, { wch: 15 }, // Location
-                { wch: 25 }, { wch: 20 }, { wch: 12 }  // Crime Type & Date
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet('Crime Reports');
+            worksheet.addRow(headers);
+            data.forEach(row => worksheet.addRow(row));
+            worksheet.columns = [
+                { width: 15 }, { width: 12 }, { width: 10 }, { width: 12 }, { width: 12 }, { width: 15 }, { width: 10 }, // Basic info
+                { width: 60 }, { width: 15 }, { width: 15 }, // Location
+                { width: 25 }, { width: 20 }, { width: 12 }  // Crime Type & Date
             ];
 
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Crime Reports');
-            const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+            const buffer = await workbook.xlsx.writeBuffer();
 
             return new NextResponse(buffer, {
                 status: 200,

@@ -13,13 +13,19 @@ interface UpdateStatusRequestBody {
   status: UserStatus; // Expect 'approved' or 'rejected'
 }
 
+type RouteContext = {
+  params: Promise<{ id: string }>;
+};
+
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } } // Destructure 'id' from params (matches folder name)
+  { params }: RouteContext
 ): Promise<NextResponse> {
+  let id = "unknown";
+
   try {
     // 1. Validate userId format (using params.id)
-    const { id } = params;
+    ({ id } = await params);
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json({ message: "Invalid user ID format." }, { status: 400 });
     }
@@ -86,7 +92,7 @@ export async function PATCH(
     );
 
   } catch (error: any) {
-    console.error(`API Error updating user status for ID ${params?.id}:`, error); // Use params.id in log
+    console.error(`API Error updating user status for ID ${id}:`, error);
 
     if (error instanceof mongoose.Error.ValidationError) {
       const messages = Object.values(error.errors).map(e => e.message);

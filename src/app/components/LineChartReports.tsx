@@ -322,10 +322,11 @@ const LineChartReports: React.FC<LineChartReportsProps> = ({
         },
         y: {
           beginAtZero: true,
+          border: {
+            display: false,
+          },
           grid: {
             color: '#e5e7eb',
-            borderDash: [4, 4] as [number, number],
-            drawBorder: false,
           },
           ticks: {
             font: { size: 11 },

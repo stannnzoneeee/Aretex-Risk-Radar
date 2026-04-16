@@ -22,7 +22,7 @@ const inputFieldStyles = "block w-full px-3 py-2 border border-gray-300 rounded-
 const labelStyles = "block text-gray-700 text-sm font-bold mb-1";
 const selectStyles = `${inputFieldStyles} bg-white`;
 
-export default function AdminEditUserPage({ params }: { params: { id: string } }) {
+export default function AdminEditUserPage({ params }: { params: Promise<{ id: string }> }) {
     const resolvedParams = use(params);
     const { id: userId } = resolvedParams;
     const router = useRouter();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { use, useState, useEffect, useRef } from "react";
 import { fetchCoordinates } from "@/app/utils/geocoder";
 import { isPSGCCode } from "@/app/utils/ispsgc";
 import LocationDropdown from "@/app/components/LocationDropdown";
@@ -80,13 +80,13 @@ interface CrimeReport {
 }
 
 interface EditCrimeReportPageProps {
-  params: {
+  params: Promise<{
     crimeReportId: string;
-  };
+  }>;
 }
 
 export default function EditCrimeReportPage({ params }: EditCrimeReportPageProps) {
-  const { crimeReportId } = params;
+  const { crimeReportId } = use(params);
 
   // --- Component State and Logic ---
   const [formData, setFormData] = useState<Partial<CrimeReport>>({});

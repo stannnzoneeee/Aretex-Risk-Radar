@@ -5,7 +5,7 @@ import connectDB from '@/lib/mongodb'; // Assuming this is your DB connection fu
 import User, { IUser, UserStatus } from '@/models/User';
 import UserProfile, { IUserProfile, UserSex } from '@/models/UserProfile';
 import mongoose, { PipelineStage } from 'mongoose';
-import * as XLSX from 'xlsx';
+import * as ExcelJS from 'exceljs';
 import PDFDocument from 'pdfkit';
 import { PassThrough } from 'stream'; // Use standard import for stream
 import path from 'path'; // Import path module for joining paths
@@ -103,11 +103,12 @@ export async function GET(req: NextRequest) {
         if (format === 'excel') {
             const headers = [ "Name", "Email", "Sex", "Employee No.", "Work Position", "Team", "Role", "Status", "Registered Date" ];
             const data = users.map(user => [ user.name || 'N/A', user.email, user.sex, user.employeeNumber, user.workPosition, user.team, user.role, user.status, user.createdAt ]);
-            const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
-            ws['!cols'] = [ { wch: 25 }, { wch: 30 }, { wch: 15 }, { wch: 15 }, { wch: 20 }, { wch: 20 }, { wch: 10 }, { wch: 12 }, { wch: 15 } ];
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Users');
-            const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet('Users');
+            worksheet.addRow(headers);
+            data.forEach(row => worksheet.addRow(row));
+            worksheet.columns = [ { width: 25 }, { width: 30 }, { width: 15 }, { width: 15 }, { width: 20 }, { width: 20 }, { width: 10 }, { width: 12 }, { width: 15 } ];
+            const buffer = await workbook.xlsx.writeBuffer();
             return new NextResponse(buffer, { status: 200, headers: { 'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'Content-Disposition': 'attachment; filename="users.xlsx"', }, });
         }
 
