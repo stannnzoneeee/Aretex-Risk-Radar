@@ -2,9 +2,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-
-// Ensure this matches your environment variable setup
-const PYTHON_API_URL = process.env.NEXT_PUBLIC_PYTHON_API_URL || "http://localhost:8000";
+import { buildPythonApiUrl } from "@/app/utils/pythonApi";
 
 // Define props for the PredictionCharts component
 interface PredictionChartsProps {
@@ -18,7 +16,7 @@ const PredictionCharts: React.FC<PredictionChartsProps> = ({
   className = "",
   title = "Prediction Chart", // Default title
 }) => {
-  const [iframeKey, setIframeKey] = useState(Date.now());
+  const [iframeKey, setIframeKey] = useState(() => Date.now());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [chartUrl, setChartUrl] = useState<string | undefined>(undefined); // Renamed from mapUrl
@@ -30,18 +28,7 @@ const PredictionCharts: React.FC<PredictionChartsProps> = ({
         console.warn("PredictionCharts: Endpoint path is missing.");
         return null;
       }
-      // Ensure endpointPath starts with '/'
-      if (!endpointPath.startsWith('/')) {
-         console.warn(`PredictionCharts: endpointPath "${endpointPath}" should start with a '/'. Prepending.`);
-         endpointPath = `/${endpointPath}`;
-      }
-      // Ensure PYTHON_API_URL is valid
-      if (!PYTHON_API_URL || typeof PYTHON_API_URL !== 'string') {
-          console.error("PredictionCharts: Invalid PYTHON_API_URL environment variable.");
-          return null;
-      }
-      // Construct and return the full URL
-      return new URL(endpointPath, PYTHON_API_URL).toString();
+      return buildPythonApiUrl(endpointPath);
     } catch (err) {
       console.error("PredictionCharts: Invalid URL construction:", err);
       return null;

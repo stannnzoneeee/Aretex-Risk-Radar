@@ -2,9 +2,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-
-// Ensure this matches your environment variable setup
-const PYTHON_API_URL = process.env.NEXT_PUBLIC_PYTHON_API_URL || "http://localhost:8000";
+import { buildPythonApiUrl } from "@/app/utils/pythonApi";
 
 // Define props for the WeatherMap component
 interface WeatherMapProps {
@@ -18,7 +16,7 @@ const WeatherMap: React.FC<WeatherMapProps> = ({
   className = "",
   title = "Weather Dashboard Visualization", // Default title
 }) => {
-  const [iframeKey, setIframeKey] = useState(Date.now());
+  const [iframeKey, setIframeKey] = useState(() => Date.now());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [weatherMapUrl, setWeatherMapUrl] = useState<string | undefined>(undefined); // Renamed state
@@ -30,19 +28,7 @@ const WeatherMap: React.FC<WeatherMapProps> = ({
         console.warn("WeatherMap: Endpoint path is missing.");
         return null;
       }
-      // Ensure endpointPath starts with '/'
-      let correctedPath = endpointPath;
-      if (!correctedPath.startsWith('/')) {
-         console.warn(`WeatherMap: endpointPath "${correctedPath}" should start with a '/'. Prepending.`);
-         correctedPath = `/${correctedPath}`;
-      }
-      // Ensure PYTHON_API_URL is valid
-      if (!PYTHON_API_URL || typeof PYTHON_API_URL !== 'string') {
-          console.error("WeatherMap: Invalid PYTHON_API_URL.");
-          return null;
-      }
-      // Construct and return the full URL
-      return new URL(correctedPath, PYTHON_API_URL).toString();
+      return buildPythonApiUrl(endpointPath);
     } catch (err) {
       console.error("WeatherMap: Invalid URL construction:", err);
       return null;

@@ -2,8 +2,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-
-const PYTHON_API_URL = process.env.NEXT_PUBLIC_PYTHON_API_URL || "http://localhost:8000";
+import { buildPythonApiUrl } from "@/app/utils/pythonApi";
 
 // --- NEW: Interface for Legend Items ---
 interface LegendItem {
@@ -24,7 +23,7 @@ const CrimeMap: React.FC<CrimeMapProps> = ({
   legendTitle, // Destructure new props
   legendItems, // Destructure new props
 }) => {
-  const [iframeKey, setIframeKey] = useState(Date.now());
+  const [iframeKey, setIframeKey] = useState(() => Date.now());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [mapUrl, setMapUrl] = useState<string | undefined>(undefined);
@@ -35,16 +34,7 @@ const CrimeMap: React.FC<CrimeMapProps> = ({
         console.warn("CrimeMap: Endpoint path is missing.");
         return null;
       }
-      if (!endpointPath.startsWith('/')) {
-         console.warn(`CrimeMap: endpointPath "${endpointPath}" should start with a '/'. Prepending.`);
-         endpointPath = `/${endpointPath}`;
-      }
-      // Ensure PYTHON_API_URL is valid before creating URL object
-      if (!PYTHON_API_URL || typeof PYTHON_API_URL !== 'string') {
-          console.error("CrimeMap: Invalid PYTHON_API_URL.");
-          return null;
-      }
-      return new URL(endpointPath, PYTHON_API_URL).toString();
+      return buildPythonApiUrl(endpointPath);
     } catch (err) {
       console.error("Invalid URL construction:", err);
       return null;
