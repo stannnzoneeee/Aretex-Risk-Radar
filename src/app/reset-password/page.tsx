@@ -1,7 +1,7 @@
 // c:/projects/Next-js/crimeatlas/src/app/reset-password/page.tsx
 'use client';
 
-import React, { useState, FormEvent, useEffect } from 'react';
+import React, { useState, FormEvent, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Button from '@/app/components/Button'; // Assuming Button component exists
 import Swal from 'sweetalert2';
@@ -15,7 +15,7 @@ const passwordRequirementsMessage = "Password must be 8+ characters with upperca
 const inputFieldStyles = "w-full px-4 py-2 mb-4 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-500";
 const errorTextStyles = "text-red-600 text-xs mt-1 text-left pl-4 -mt-3 mb-2"; // Style for error messages
 
-export default function ResetPasswordPage() {
+function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [token, setToken] = useState<string | null>(null);
@@ -116,5 +116,13 @@ export default function ResetPasswordPage() {
         </div>
       </main>
     </StartupHeader>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={null}>
+      <ResetPasswordContent />
+    </Suspense>
   );
 }
