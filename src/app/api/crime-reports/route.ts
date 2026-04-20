@@ -21,15 +21,14 @@ const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
 
 // GET: Fetch Crime Reports with all filters and searches
-export async function GET(req: Request) { // Changed req type back to Request for URL parsing
-  await connectDB();
-
-  // Use NextRequest for middleware check if needed, but URL parsing works with Request
-  const roleCheck = await requireRole(new NextRequest(req), ["admin"]);
-  if (roleCheck) return roleCheck;
-
+export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url); // Use standard URL parsing
+    const roleCheck = await requireRole(req, ["admin"]);
+    if (roleCheck) return roleCheck;
+
+    await connectDB();
+
+    const { searchParams } = req.nextUrl;
     const limit = parseInt(searchParams.get("limit") || "12");
     const skip = parseInt(searchParams.get("skip") || "0");
     // Filters
